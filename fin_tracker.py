@@ -80,6 +80,8 @@ def delete_database():
         print('База данных удалена.')
     else: print('Удаление отменено.')
 
+
+#пока не работает delete_transaction
 def delete_transaction(id):
     connection = sql.connect('finances.db')
     cursor = connection.cursor()
