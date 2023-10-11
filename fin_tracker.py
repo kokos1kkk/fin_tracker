@@ -100,8 +100,3 @@ def delete_transaction(id):
             print(f"Транзакция с ID {id} удалена.")
         else: print('Удаление отменено')
     connection.close()
-
-
-
-
-
