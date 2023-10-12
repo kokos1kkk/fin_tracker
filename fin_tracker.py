@@ -21,6 +21,7 @@ else:
     connection = sql.connect('finances.db')
     cursor = connection.cursor()
 
+
 def add_transactions():
     date_str = input('Введите дату транзакции (гг-мм-дд): ')
     try:
@@ -82,21 +83,36 @@ def delete_database():
 
 
 #пока не работает delete_transaction
-def delete_transaction(id):
+def delete_transaction(transaction_id):
     connection = sql.connect('finances.db')
     cursor = connection.cursor()
 
-    cursor.execute("SELECT * FROM transactions WHERE id = ?", (id))
+    cursor.execute("SELECT * FROM transactions WHERE id = ?", (transaction_id,))
     transaction = cursor.fetchone()
 
+    transaction_id = input("Введите ID транзакции для удаления: ").strip()  # Убираем лишние пробелы
+    try:
+        transaction_id = int(transaction_id)
+    except ValueError:
+        print("Неверный формат ID. Введите целое число.")
+    
     if transaction is None:
-        print(f"Транзакция с ID {id} не найдена.")
+        print(f"Транзакция с ID {transaction_id} не найдена.")
     else:
-        confirmation = input(f"Вы уверены, что хотите удалить транзакцию с ID {id}? Y/N? ")
-        if confirmation.lower() == 'Y':
-            id = int(input())
-            cursor.execute("DELETE FROM transactions WHERE id = ?", (id))
+        confirmation = input(f"Вы уверены, что хотите удалить транзакцию с ID {transaction_id}? Y/N? ")
+        if confirmation == 'Y':
+            cursor.execute("DELETE FROM transactions WHERE id = ?", (transaction_id,))
+            
+            # Получаем все оставшиеся транзакции
+            cursor.execute("SELECT id FROM transactions")
+            remaining_transaction_ids = [row[0] for row in cursor.fetchall()]
+            
+            # Пересчитываем ID для оставшихся транзакций
+            for new_id, old_id in enumerate(remaining_transaction_ids, start=1):
+                cursor.execute("UPDATE transactions SET id = ? WHERE id = ?", (new_id, old_id))
+            
             connection.commit()
-            print(f"Транзакция с ID {id} удалена.")
-        else: print('Удаление отменено')
+            print(f"Транзакция с ID {transaction_id} удалена.")
+        else:
+            print('Удаление отменено')
     connection.close()
