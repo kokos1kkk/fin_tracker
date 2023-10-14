@@ -2,8 +2,11 @@ import sqlite3 as sql
 import os
 from datetime import datetime
 
-if not os.path.exists('finances.db'):
-    connection = sql.connect('finances.db')
+
+name_database = 'finances.db'
+
+if not os.path.exists(name_database):
+    connection = sql.connect(name_database)
     cursor = connection.cursor()
 
     cursor.execute('''
@@ -18,12 +21,12 @@ if not os.path.exists('finances.db'):
     connection.close()
 
 else:
-    connection = sql.connect('finances.db')
+    connection = sql.connect(name_database)
     cursor = connection.cursor()
 
 
 def add_transactions():
-    date_str = input('Введите дату транзакции (гг-мм-дд): ')
+    date_str = input('Введите дату транзакции (гггг-мм-дд): ')
     try:
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
@@ -39,9 +42,15 @@ def add_transactions():
     
     category = input('Введите категорию транзакции: ')
     
-    transaction_type = input('Введте тип транзакции (доход/расход): ')
+    transaction_type = input('Введте тип транзакции (доход/расход): 1/2?')
     
-    if transaction_type not in ('доход', 'расход'):
+    if transaction_type == '1':
+        transaction_type = 'доход'
+    
+    if transaction_type == '2':
+        transaction_type = 'расход'
+
+    if transaction_type not in ('доход', 'расход', '1', '2'):
         print('Неверный тип транзакции. Используйте доход/расход.')
         return
 
@@ -53,7 +62,7 @@ def add_transactions():
 
 question_add = print('Хотите ли вы добавить новую транзакцию? Y/N?')
 add_answer = input()
-if add_answer == 'Y':
+if add_answer == 'Y' or add_answer == 'y':
     add_transactions()
     cursor.execute("SELECT * FROM transactions")
     rows = cursor.fetchall()
@@ -62,7 +71,7 @@ if add_answer == 'Y':
         print(row)
 
     connection.close()
-elif add_answer == 'N':
+elif add_answer == 'N' or add_answer == 'n':
     cursor.execute("SELECT * FROM transactions")
     rows = cursor.fetchall()
 
@@ -77,10 +86,28 @@ else:
 def delete_database():
     confirmation = input('Вы уверены что хотите удалить базу данных? Y/N? ')
     if confirmation == 'Y':
-        os.remove('finances.db')
+        os.remove(name_database)
         print('База данных удалена.')
     else: print('Удаление отменено.')
 
+
+def display_database():
+    connection = sql.connect(name_database)
+    cursor = connection.cursor()
+    
+    # Выполняем SQL-запрос для выборки всех данных из таблицы
+    cursor.execute("SELECT * FROM transactions")
+    
+    # Получаем все строки данных
+    rows = cursor.fetchall()
+    
+    if not rows:
+        print("База данных пуста.")
+    else:
+        for row in rows:
+            print(row)
+    
+    connection.close()
 
 #пока не работает delete_transaction
 def delete_transaction(transaction_id):
@@ -90,7 +117,7 @@ def delete_transaction(transaction_id):
     cursor.execute("SELECT * FROM transactions WHERE id = ?", (transaction_id,))
     transaction = cursor.fetchone()
 
-    transaction_id = input("Введите ID транзакции для удаления: ").strip()  # Убираем лишние пробелы
+    #transaction_id = input("Введите ID транзакции для удаления: ").strip()  # Убираем лишние пробелы
     try:
         transaction_id = int(transaction_id)
     except ValueError:
@@ -113,6 +140,15 @@ def delete_transaction(transaction_id):
             
             connection.commit()
             print(f"Транзакция с ID {transaction_id} удалена.")
+
+            display_database()
+
         else:
             print('Удаление отменено')
     connection.close()
+
+connection.close()
+
+#delete_transaction(transaction_id = int(input("Введите id транзакции которую хотите удалить: ")))
+
+#delete_database()
