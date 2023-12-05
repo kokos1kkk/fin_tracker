@@ -1,4 +1,5 @@
 import sqlite3 as sql
+import matplotlib.pyplot as plt
 import os
 from datetime import datetime
 
@@ -30,7 +31,7 @@ def add_transactions():
     try:
         date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except ValueError:
-        print('Неверный формат даты. Используйте гггг-мм-ддю')
+        print('Неверный формат даты. Используйте корректные гггг-мм-дд')
         return
     
     amount_str = float(input('Введите сумму транзакции: '))
@@ -117,27 +118,24 @@ def delete_transaction(transaction_id):
     cursor.execute("SELECT * FROM transactions WHERE id = ?", (transaction_id,))
     transaction = cursor.fetchone()
 
-    #transaction_id = input("Введите ID транзакции для удаления: ").strip()  # Убираем лишние пробелы
     try:
         transaction_id = int(transaction_id)
     except ValueError:
         print("Неверный формат ID. Введите целое число.")
-    
+
     if transaction is None:
         print(f"Транзакция с ID {transaction_id} не найдена.")
     else:
         confirmation = input(f"Вы уверены, что хотите удалить транзакцию с ID {transaction_id}? Y/N? ")
         if confirmation == 'Y':
             cursor.execute("DELETE FROM transactions WHERE id = ?", (transaction_id,))
-            
-            # Получаем все оставшиеся транзакции
+
             cursor.execute("SELECT id FROM transactions")
             remaining_transaction_ids = [row[0] for row in cursor.fetchall()]
-            
-            # Пересчитываем ID для оставшихся транзакций
+
             for new_id, old_id in enumerate(remaining_transaction_ids, start=1):
                 cursor.execute("UPDATE transactions SET id = ? WHERE id = ?", (new_id, old_id))
-            
+
             connection.commit()
             print(f"Транзакция с ID {transaction_id} удалена.")
 
@@ -145,10 +143,31 @@ def delete_transaction(transaction_id):
 
         else:
             print('Удаление отменено')
+    
     connection.close()
-
-connection.close()
 
 #delete_transaction(transaction_id = int(input("Введите id транзакции которую хотите удалить: ")))
 
 #delete_database()
+
+def display_data_visualisation():
+    connection = sql.connect('finances.db')
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT category, SUM(amount) FROM transactions WHERE type='расход' GROUP BY category")
+    data = cursor.fetchall()
+
+    if data:
+        categories, amounts = zip(*data)
+
+        plt.bar(categories, amounts, color='blue')
+        plt.xlabel('Категории')
+        plt.ylabel('Сумма')
+        plt.title('Распределение расходов по категориям')
+        plt.show()
+    
+    else: print("Нет данных для визуализации")
+
+    connection.close()
+
+display_data_visualisation()
